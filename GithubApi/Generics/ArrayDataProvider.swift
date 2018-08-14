@@ -9,9 +9,6 @@
 import Foundation
 
 class ArrayDataProvider<T>: CollectionDataProvider {
-    func willShowCellAt(indexPath: IndexPath) {
-
-    }
 
     // MARK: - Internal Properties
     var items: [[T]] = []
@@ -53,5 +50,9 @@ class ArrayDataProvider<T>: CollectionDataProvider {
             return
         }
         items[indexPath.section][indexPath.row] = value
+    }
+
+    func appendItems(array: [[T]]) {
+        items[0].append(contentsOf: array[0])
     }
 }

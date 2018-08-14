@@ -29,4 +29,8 @@ class CollectionArrayDataSource<T, Cell: UICollectionViewCell>: CollectionDataSo
     func updateItem(at indexPath: IndexPath, value: T) {
         provider.updateItem(at: indexPath, value: value)
     }
+
+    func appendItems(array: [T]) {
+        provider.appendItems(array: [array])
+    }
 }

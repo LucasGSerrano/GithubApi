@@ -18,13 +18,18 @@ class MainViewController: UIViewController {
 
     var urlToLoad: String?
 
-    var paging = 1
+
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
 
         reposDataSource = setUpReposDataSource()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        NotificationCenter.default.addObserver(self, selector: #selector(didScroll),
+                                               name: NSNotification.Name("didScroll"), object: nil)
     }
 
 }
@@ -37,20 +42,22 @@ class PullRequestsDataSource: CollectionArrayDataSource<PullRequests, PullReques
 fileprivate extension MainViewController {
     func setUpReposDataSource() -> ReposDataSource? {
         let networkService = NetworkService(withBaseURL: Constants.baseUrl)
-        networkService.fetch(fromRoute: Routes.repos, paging) { [weak self] (result) in
+        networkService.fetch(fromRoute: Routes.repos, reposDataSource?.paging ?? 1) { [weak self] (result) in
             guard let strongSelf = self else { return }
             switch result {
             case .success(let model):
                 let dataSource = ReposDataSource(collectionView: strongSelf.collectionView, array: model.items ?? [])
+                dataSource.paging += 1
                 dataSource.collectionItemSelectionHandler = { [weak self] indexPath in
                     guard let strongSelf = self, let repo = strongSelf.reposDataSource?.item(at: indexPath) else { return }
                     strongSelf.selectedIndexPath = indexPath
                     strongSelf.urlToLoad = "repos/\(repo.owner?.name ?? "")/\(repo.name ?? "")/pulls"
                     strongSelf.pullRequestsDataSource = strongSelf.setUpPullRequestDataSource()
+                    NotificationCenter.default.removeObserver(strongSelf,
+                                                              name: NSNotification.Name("didScroll"), object: nil)
                 }
                 strongSelf.reposDataSource = dataSource
                 strongSelf.collectionView.reloadData()
-                strongSelf.paging += 1
             case .failure(let error):
                 print (error)
             }
@@ -93,8 +100,26 @@ fileprivate extension MainViewController {
 
     @objc func backBtn() {
         navigationItem.setLeftBarButton(nil, animated: true)
-        paging = 1
+        reposDataSource?.paging = 1
         reposDataSource = setUpReposDataSource()
+        NotificationCenter.default.addObserver(self, selector: #selector(didScroll),
+                                               name: NSNotification.Name("didScroll"), object: nil)
+    }
+
+    @objc func didScroll() {
+        let networkService = NetworkService(withBaseURL: Constants.baseUrl)
+        guard let `reposDataSource` = reposDataSource else { return }
+        networkService.fetch(fromRoute: Routes.repos, reposDataSource.paging) { [weak self] (result) in
+            guard let strongSelf = self else { return }
+            switch result {
+            case .success(let model):
+                reposDataSource.appendItems(array: model.items ?? [])
+                strongSelf.collectionView.reloadData()
+                reposDataSource.paging += 1
+            case .failure(let error):
+                print (error)
+            }
+        }
     }
 
 }

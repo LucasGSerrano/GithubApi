@@ -21,6 +21,8 @@ class CollectionDataSource<Provider: CollectionDataProvider, Cell: UICollectionV
     let provider: Provider
     let collectionView: UICollectionView
 
+    var paging = 1
+
     // MARK: - Lifecycle
     init(collectionView: UICollectionView, provider: Provider) {
         self.collectionView = collectionView
@@ -73,7 +75,9 @@ class CollectionDataSource<Provider: CollectionDataProvider, Cell: UICollectionV
     }
 
     func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
-        provider.willShowCellAt(indexPath: indexPath)
+        if indexPath.row + 4 == provider.numberOfItems(in: indexPath.section) {
+            NotificationCenter.default.post(name: NSNotification.Name("didScroll"), object: nil)
+        }
     }
 
 }

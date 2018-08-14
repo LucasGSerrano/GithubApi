@@ -17,5 +17,4 @@ protocol CollectionDataProvider {
 
     func updateItem(at indexPath: IndexPath, value: T)
 
-    func willShowCellAt(indexPath: IndexPath)
 }
